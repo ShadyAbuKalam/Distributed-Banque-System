@@ -60,7 +60,6 @@ public class DatabaseInterface implements AutoCloseable {
         }
     }
     
-    // todo : throw exception on DuplicateAccount
     public boolean insertAccount(String user_name
             , String password) throws DuplicateAccountException {
         int resultCount;
