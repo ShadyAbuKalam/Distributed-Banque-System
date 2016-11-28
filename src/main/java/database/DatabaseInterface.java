@@ -178,8 +178,67 @@ public class DatabaseInterface implements AutoCloseable {
         }
     }
     
-    public boolean transferTo(String send_user, String target_user, int amount) {
-        throw new NotImplementedException();
+    public boolean transferTo(String send_user, String target_user, int amount) throws NotFoundAccountException, NotEnoughBalanceException {
+        try (
+                PreparedStatement stmt = getConnection().prepareStatement("SELECT * FROM Accounts WHERE user_name IN (?,?)", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+                PreparedStatement transactionStmt = getConnection().prepareStatement("INSERT INTO Transactions (user_name,amount,type,timestamp) VALUES (?,?,?,?)");
+                PreparedStatement InternalTransactionStmt = getConnection().prepareStatement("INSERT INTO InternalTransactions (send_user,timestamp,target_user) VALUES (?,?,?)");
+        
+        ) {
+            
+            stmt.setString(1, send_user);
+            stmt.setString(2, target_user);
+            ResultSet resultset = stmt.executeQuery();
+            
+            if (!resultset.first())
+                throw new NotFoundAccountException();
+            if (resultset.getInt("balance") < amount)
+                throw new NotEnoughBalanceException();
+            int balance = resultset.getInt("balance");
+            resultset.updateInt("balance", resultset.getInt("balance") - amount);
+            resultset.updateRow();
+            
+            if (!resultset.next()) {
+                throw new NotFoundAccountException();
+            }
+            resultset.updateInt("balance", resultset.getInt("balance") + amount);
+            resultset.updateRow();
+            
+            //todo Insert Transaction History
+            
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+            transactionStmt.setString(1, send_user);
+            transactionStmt.setInt(2, amount);
+            transactionStmt.setInt(3, TransactionTypes.InternalTransaction.ordinal());
+            transactionStmt.setTimestamp(4, timestamp);
+            transactionStmt.execute();
+            
+            InternalTransactionStmt.setString(1, send_user);
+            InternalTransactionStmt.setTimestamp(2, timestamp);
+            InternalTransactionStmt.setString(3, target_user);
+            InternalTransactionStmt.execute();
+            getConnection().commit();
+            
+            
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            try {
+                
+                getConnection().rollback();
+            } catch (SQLException e1) {
+                e1.printStackTrace();
+            }
+            
+            return false;
+        } catch (Exception e1) {
+            try {
+                getConnection().rollback();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            throw e1;
+        }
     }
     
     public boolean transferTo(String internal_user
