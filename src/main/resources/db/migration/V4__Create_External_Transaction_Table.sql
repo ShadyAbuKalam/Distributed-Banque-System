@@ -4,10 +4,10 @@ CREATE TABLE Banks (
 );
 create table ExternalTransaction (
   internal_user VARCHAR(30) not null  ,
-  timestmap TIMESTAMP not null   ,
+  timestamp TIMESTAMP not null   ,
   external_user VARCHAR(30) not null ,
   external_bank VARCHAR(30) not null ,
-  PRIMARY KEY (internal_user,timestmap),
-  FOREIGN KEY  (internal_user,timestmap) REFERENCES Transactions (user_name,timestmap) ON UPDATE CASCADE ON DELETE RESTRICT,
+  PRIMARY KEY (internal_user,timestamp),
+  FOREIGN KEY  (internal_user,timestamp) REFERENCES Transactions (user_name,timestamp) ON UPDATE CASCADE ON DELETE RESTRICT,
   FOREIGN KEY (external_bank) REFERENCES Banks (name) ON UPDATE CASCADE ON DELETE RESTRICT
 );
