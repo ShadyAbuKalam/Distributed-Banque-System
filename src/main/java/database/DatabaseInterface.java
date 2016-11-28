@@ -251,6 +251,20 @@ public class DatabaseInterface implements AutoCloseable {
         throw new NotImplementedException();
     }
     
+    public void clearTables() throws SQLException {
+        Statement stmt = getConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+        stmt.execute("SET FOREIGN_KEY_CHECKS=0;");
+        ResultSet x = stmt.executeQuery("SELECT Concat('TRUNCATE TABLE ',table_schema,'.',TABLE_NAME, ';') FROM INFORMATION_SCHEMA.TABLES WHERE  table_schema IN ('distributed_banque')");
+        while (x.next()) {
+            Statement stmt2 = getConnection().createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+            stmt2.execute(x.getString(1));
+            stmt2.close();
+        }
+        ;
+        stmt.execute("SET FOREIGN_KEY_CHECKS=1;");
+        
+    }
+    
     enum TransactionTypes {
         Withdraw, Deposit, InternalTransaction, IncomingExternalTransaction, OutcomingExternalTransaction
     }

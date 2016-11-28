@@ -1,29 +1,20 @@
 import database.DatabaseInterface;
 import database.exceptions.DuplicateAccountException;
+import database.exceptions.NotEnoughBalanceException;
 import database.exceptions.NotFoundAccountException;
 
+import java.sql.SQLException;
+
 public class main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException, DuplicateAccountException, NotFoundAccountException, NotEnoughBalanceException {
         DatabaseInterface db = new DatabaseInterface();
-        System.out.println("Inserting new user");
-        try {
-            if (db.insertAccount("shady94", "12345")) {
-                System.out.println("Inserted new user successfully");
-                try {
-                    if (db.authenticate("shady94", "12345")) {
-                        System.out.println("Authenticated new user successfully");
-                        
-                    }
-                } catch (NotFoundAccountException e) {
-                    System.out.println("Account Not Found");
-    
-                }
-            } else
-                System.out.println("Failed to insert new user successfully");
-        } catch (DuplicateAccountException e) {
-            System.out.println((char)27 + "[31mDuplicate Entry" + (char)27 + "[0m");
-        }
-        
-        
+       db.clearTables();
+        System.out.println("Inserting new users");
+       db.insertAccount("shady94","123456");
+       db.insertAccount("shady95","123456");
+       
+       db.deposit("shady94",5000);
+       db.withdraw("shady94",1000);
+       db.transferTo("shady94","shady95",3000);
     }
 }
