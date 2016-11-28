@@ -47,7 +47,7 @@ public class DatabaseInterface implements AutoCloseable {
             stmt.setString(1, user_name);
             
             ResultSet result = stmt.executeQuery();
-            if (result.first())
+            if (!result.first())
                 throw new NotFoundAccountException();
             String databasePassword = result.getString("password");
             
@@ -94,7 +94,7 @@ public class DatabaseInterface implements AutoCloseable {
             ResultSet result = stmt.executeQuery();
             if (!result.first())
                 throw new NotFoundAccountException();
-            ;
+            
             int balance = result.getInt("balance");
             
             result.close();
