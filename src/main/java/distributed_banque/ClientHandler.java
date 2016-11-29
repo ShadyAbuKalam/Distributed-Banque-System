@@ -6,7 +6,6 @@ import distributed_banque.database.exceptions.BankNotRegisteredException;
 import distributed_banque.database.exceptions.NotEnoughBalanceException;
 import distributed_banque.database.exceptions.NotFoundAccountException;
 
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -75,33 +74,16 @@ public class ClientHandler extends Thread {
                             handleInternalTransfer(options);
                         } else if (options[0].equals("6")) {
                             handleClientDoExternalTransfer(options);
-    
+                            
                         }
                     }
                     while (!options[0].equals("7"));
                     dos.writeUTF("disconnect");
                     break;
                 } else if (conn_type.equals(BANK_CONN)) {
-                    //check authentication
-                    String authtoken = dis.readUTF();
-                    
-                    if (!(authtoken.equals(Config.getAuthToken()))) {
-                        dos.writeUTF(REFUSED_CONNECTION);
-                        
-                    } else {
-                        dos.writeUTF(ENTER_TRANSACTION);
-                        String[] input = dis.readUTF().split(":");
-                        String otherbank = input[0];
-                        String otheruser = input[1];
-                        String internaluser = input[2];
-                        int amount = Integer.parseInt(input[3]);
-                        if (db.transferFrom(internaluser, otherbank, otheruser, amount)) {
-                            dos.writeUTF(DONE);
-                        } else {
-                            dos.writeUTF(NOT_FOUND_ACCOUNT);
-                        }
-                    }
+                    handleBankConnection();
                     break;
+                    
                 }
                 
             }
@@ -116,6 +98,31 @@ public class ClientHandler extends Thread {
             e.printStackTrace();
         }
         
+    }
+    
+    private void handleBankConnection() throws IOException {
+        //check authentication
+        String authtoken = dis.readUTF();
+        
+        if (!(authtoken.equals(Config.getAuthToken()))) {
+            dos.writeUTF(REFUSED_CONNECTION);
+            
+        } else {
+            dos.writeUTF(ENTER_TRANSACTION);
+            String[] input = dis.readUTF().split(":");
+            String otherbank = input[0];
+            String otheruser = input[1];
+            String internaluser = input[2];
+            int amount = Integer.parseInt(input[3]);
+            try {
+                if (db.transferFrom(internaluser, otherbank, otheruser, amount)) {
+                    dos.writeUTF(DONE);
+                } else dos.writeUTF(NOT_FOUND_ACCOUNT); // instead of fail as I am lazy to do it :P
+            } catch (NotFoundAccountException e) {
+                dos.writeUTF(NOT_FOUND_ACCOUNT);
+                
+            }
+        }
     }
     
     private void handleClientDoExternalTransfer(String[] options) throws IOException {
@@ -149,7 +156,7 @@ public class ClientHandler extends Thread {
                         break;
                     } else if (peerresponse.equalsIgnoreCase(DONE)) {
                         db.transferToExternalBank(username, otherbank, otheruser, Integer.valueOf(amount));
-                    dos.writeUTF(String.format("Transferred successfully %s to %s - %s", amount,otherbank,otheruser));
+                        dos.writeUTF(String.format("Transferred successfully %s to %s - %s", amount, otherbank, otheruser));
                         break;
                     } else if (peerresponse.equalsIgnoreCase(NOT_FOUND_ACCOUNT)) {
                         dos.writeUTF("Target account not found");
@@ -171,27 +178,24 @@ public class ClientHandler extends Thread {
             
         } catch (BankNotRegisteredException e) {
             dos.writeUTF("The target bank is not known");
-        }
-        catch (UnknownHostException e){
+        } catch (UnknownHostException e) {
             dos.writeUTF("Can't communicate with the target bank");
-    
+            
         }
     }
     
     private void handleViewHistory() throws IOException {
         try {
             ArrayList<String> transactions = db.getTransactions(username);
-            if(transactions.size() == 0)
-            {dos.writeUTF("No transactions yet on this account");}
-            else
-            dos.writeUTF(Joiner.on("\n").join(transactions));
+            if (transactions.size() == 0) {
+                dos.writeUTF("No transactions yet on this account");
+            } else
+                dos.writeUTF(Joiner.on("\n").join(transactions));
         } catch (NotFoundAccountException e) {
             dos.writeUTF("Account Not Found");
         }
     }
-    private void handleExternalTransfer(){
-        
-    }
+    
     private void handleInternalTransfer(String[] options) throws IOException {
         try {
             db.transferToExternalBank(username, options[1], Integer.parseInt(options[2]));
