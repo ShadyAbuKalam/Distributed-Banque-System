@@ -8,6 +8,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
+import java.util.ArrayList;
 
 /**
  * Created by Shady Atef on 11/26/16.
@@ -85,10 +86,9 @@ public class DatabaseInterface implements AutoCloseable {
     }
     
     public int getBalance(String user_name) throws NotFoundAccountException {
-        PreparedStatement stmt = null;
-        try {
+        try (PreparedStatement stmt = getConnection().prepareStatement("SELECT  balance FROM Accounts WHERE user_name = ?", ResultSet.TYPE_SCROLL_SENSITIVE);
+        ) {
             
-            stmt = getConnection().prepareStatement("SELECT  balance FROM Accounts WHERE user_name = ?", ResultSet.TYPE_SCROLL_SENSITIVE);
             stmt.setString(1, user_name);
             
             ResultSet result = stmt.executeQuery();
@@ -242,7 +242,7 @@ public class DatabaseInterface implements AutoCloseable {
     }
     
     public boolean transferTo(String internal_user
-            , String external_bank, String external_user, int amount) {
+            , String external_bank, String external_user, int amount) throws NotEnoughBalanceException {
         throw new NotImplementedException();
     }
     
@@ -263,6 +263,73 @@ public class DatabaseInterface implements AutoCloseable {
         ;
         stmt.execute("SET FOREIGN_KEY_CHECKS=1;");
         
+    }
+    
+    public String getBankAuthToken(String bankname) {
+        throw new NotImplementedException();
+    }
+    
+    public boolean doAccountExists(String user_name) {
+        try (PreparedStatement stmt = getConnection().prepareStatement("SELECT  * FROM Accounts WHERE user_name = ?");
+        ) {
+            
+            stmt.setString(1, user_name);
+            
+            ResultSet result = stmt.executeQuery();
+            boolean exists = result.first();
+            result.close();
+            
+            return exists;
+            
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    public ArrayList<String> getTransactions(String username) throws NotFoundAccountException {
+        if(!this.doAccountExists(username))
+        {throw  new NotFoundAccountException();}
+        ArrayList<String> transactionsHistory = new ArrayList<>();
+        try (
+                PreparedStatement withdrawalDepositStmt = getConnection().prepareStatement("SELECT * FROM Transactions WHERE user_name = ? AND type IN (?,?)");
+                PreparedStatement internalTransferStmt = getConnection().prepareStatement("SELECT a.timestamp,a.amount, b.send_user ,b.target_user FROM Transactions as a,InternalTransactions as b WHERE a.user_name = b.send_user AND a.timestamp = b. timestamp AND (b.send_user = ? OR b.target_user = ?) ")
+        
+        ) {
+            withdrawalDepositStmt.setString(1,username);
+            withdrawalDepositStmt.setInt(2,TransactionTypes.Withdraw.ordinal());
+            withdrawalDepositStmt.setInt(3,TransactionTypes.Deposit.ordinal());
+            ResultSet result = withdrawalDepositStmt.executeQuery();
+            while (result.next()){
+                String history = "%s %s %s" ;
+                if(result.getInt("type")==TransactionTypes.Deposit.ordinal())
+                {
+                  history =  String.format(history, "Deposit",result.getInt("amount"),result.getTimestamp("timestamp"));
+                }
+                else history = String.format(history, "Withdraw",result.getInt("amount"),result.getTimestamp("timestamp"));
+                
+                transactionsHistory.add(history);
+            
+            }
+            result.close();
+    
+            internalTransferStmt.setString(1,username);
+            internalTransferStmt.setString(2,username);
+             result =   internalTransferStmt.executeQuery();
+            while (result.next()){
+                String history = "Internal transfer from  %s to %s with amount of %s at %s" ;
+    
+                history = String.format(history, result.getString("send_user"),result.getString("target_user"),result.getInt("amount"),result.getTimestamp("timestamp"));
+    
+                transactionsHistory.add(history);
+            }
+            result.close();
+        } catch (SQLException e) {
+            
+            e.printStackTrace();
+        }
+        return transactionsHistory;
     }
     
     enum TransactionTypes {
