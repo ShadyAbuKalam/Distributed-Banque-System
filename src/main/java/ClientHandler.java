@@ -70,6 +70,7 @@ public class ClientHandler extends Thread {
                             handleInternalTransfer(options);
                         } else if (options[0].equals("6")) {
                             try {
+                                //todo:Wrap external Transfer case into handler
                                 //dos.writeUTF("External transfer of "+options[5]+" LE to " +options[4] );
                                 //external transfer
                                 //	 "\n 6-External Transfer : bankIP : port : other bank : other user : amount "

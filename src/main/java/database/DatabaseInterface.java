@@ -243,11 +243,14 @@ public class DatabaseInterface implements AutoCloseable {
     
     public boolean transferTo(String internal_user
             , String external_bank, String external_user, int amount) throws NotEnoughBalanceException {
+        //todo : implement the record-keeping of transferring to external bank
         throw new NotImplementedException();
     }
     
     public boolean transferFrom(String internal_user
             , String external_bank, String external_user, int amount) {
+        //todo : implement the record-keeping of transferring from external bank
+    
         throw new NotImplementedException();
     }
     
@@ -266,6 +269,8 @@ public class DatabaseInterface implements AutoCloseable {
     }
     
     public String getBankAuthToken(String bankname) {
+        //todo : Implement getting Authtoken of external bank
+        
         throw new NotImplementedException();
     }
     
@@ -289,6 +294,7 @@ public class DatabaseInterface implements AutoCloseable {
     }
     
     public ArrayList<String> getTransactions(String username) throws NotFoundAccountException {
+        //todo : Add External transactions
         if(!this.doAccountExists(username))
         {throw  new NotFoundAccountException();}
         ArrayList<String> transactionsHistory = new ArrayList<>();

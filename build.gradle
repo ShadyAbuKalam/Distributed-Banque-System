@@ -8,7 +8,6 @@ version '1.0-SNAPSHOT'
 apply plugin: 'java'
 apply plugin: 'application'
 
-//todo : set the mainClass of application to enable Gradle to run the app
 mainClassName = "BankServer"
 
 repositories {
