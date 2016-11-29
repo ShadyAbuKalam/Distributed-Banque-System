@@ -1,7 +1,9 @@
+package distributed_banque;
+
 import com.google.common.base.Joiner;
-import database.DatabaseInterface;
-import database.exceptions.NotEnoughBalanceException;
-import database.exceptions.NotFoundAccountException;
+import distributed_banque.database.DatabaseInterface;
+import distributed_banque.database.exceptions.NotEnoughBalanceException;
+import distributed_banque.database.exceptions.NotFoundAccountException;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -155,7 +157,7 @@ public class ClientHandler extends Thread {
                 
             }
             
-            //5.terminate connection with client
+            //5.terminate connection with distributed_banque.client
             client.close();
             dis.close();
             dos.close();

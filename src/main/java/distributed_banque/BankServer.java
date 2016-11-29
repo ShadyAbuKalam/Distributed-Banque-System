@@ -1,4 +1,4 @@
-import database.DatabaseInterface;
+package distributed_banque;
 
 import java.net.ServerSocket;
 import java.net.Socket;

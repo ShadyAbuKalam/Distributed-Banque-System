@@ -1,3 +1,5 @@
+package distributed_banque;
+
 import java.io.Console;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -7,7 +9,7 @@ public class client {
 
 	public static void main(String[] args) {
 		try {  
-			//.create client socket and connect to server
+			//.create distributed_banque.client socket and connect to server
 			System.out.println("please enter the IP Address and Port number");
 			
 			Scanner sc = new Scanner(System.in);

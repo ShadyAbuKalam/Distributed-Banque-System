@@ -1,4 +1,4 @@
-package database.exceptions;
+package distributed_banque.database.exceptions;
 
 /**
  * Created by Shady Atef on 11/29/16.

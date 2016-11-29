@@ -1,10 +1,10 @@
-package database;
+package distributed_banque.database;
 
 import com.google.common.hash.Hashing;
-import database.exceptions.BankNotRegisteredException;
-import database.exceptions.DuplicateAccountException;
-import database.exceptions.NotEnoughBalanceException;
-import database.exceptions.NotFoundAccountException;
+import distributed_banque.database.exceptions.BankNotRegisteredException;
+import distributed_banque.database.exceptions.DuplicateAccountException;
+import distributed_banque.database.exceptions.NotEnoughBalanceException;
+import distributed_banque.database.exceptions.NotFoundAccountException;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.nio.charset.StandardCharsets;
