@@ -8,7 +8,7 @@ version '1.0-SNAPSHOT'
 apply plugin: 'java'
 apply plugin: 'application'
 
-mainClassName = "BankServer"
+mainClassName = "distributed_banque.BankServer"
 
 repositories {
     mavenCentral()
