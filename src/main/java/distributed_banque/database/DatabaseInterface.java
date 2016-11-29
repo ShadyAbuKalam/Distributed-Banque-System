@@ -180,7 +180,7 @@ public class DatabaseInterface implements AutoCloseable {
         }
     }
     
-    public boolean transferTo(String send_user, String target_user, int amount) throws NotFoundAccountException, NotEnoughBalanceException {
+    public boolean transferToExternalBank(String send_user, String target_user, int amount) throws NotFoundAccountException, NotEnoughBalanceException {
         try (
                 PreparedStatement stmt = getConnection().prepareStatement("SELECT * FROM Accounts WHERE user_name IN (?,?)", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
                 PreparedStatement transactionStmt = getConnection().prepareStatement("INSERT INTO Transactions (user_name,amount,type,timestamp) VALUES (?,?,?,?)");
@@ -242,17 +242,105 @@ public class DatabaseInterface implements AutoCloseable {
         }
     }
     
-    public boolean transferTo(String internal_user
-            , String external_bank, String external_user, int amount) throws NotEnoughBalanceException {
-        //todo : implement the record-keeping of transferring to external bank
-        throw new NotImplementedException();
-    }
+    public boolean transferToExternalBank(String internal_user
+            , String external_bank, String external_user, int amount) throws NotEnoughBalanceException, NotFoundAccountException {
+        try (
+                PreparedStatement stmt = getConnection().prepareStatement("SELECT * FROM Accounts WHERE user_name = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+                PreparedStatement transactionStmt = getConnection().prepareStatement("INSERT INTO Transactions (user_name,amount,type,timestamp) VALUES (?,?,?,?)");
+                PreparedStatement InternalTransactionStmt = getConnection().prepareStatement("INSERT INTO ExternalTransactions (internal_user,timestamp,external_user,external_bank) VALUES (?,?,?,?)");
+    
+        ) {
+        
+            stmt.setString(1, internal_user);
+            ResultSet resultset = stmt.executeQuery();
+            //Decrement the balance of the internal user
+            if (!resultset.first())
+                throw new NotFoundAccountException();
+            if (resultset.getInt("balance") < amount)
+                throw new NotEnoughBalanceException();
+            int balance = resultset.getInt("balance");
+            resultset.updateInt("balance", resultset.getInt("balance") - amount);
+            resultset.updateRow();
+        
+        
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+            transactionStmt.setString(1, internal_user);
+            transactionStmt.setInt(2, amount);
+            transactionStmt.setInt(3, TransactionTypes.OutcomingExternalTransaction.ordinal());
+            transactionStmt.setTimestamp(4, timestamp);
+            transactionStmt.execute();
+        
+            InternalTransactionStmt.setString(1, internal_user);
+            InternalTransactionStmt.setTimestamp(2, timestamp);
+            InternalTransactionStmt.setString(3, external_user);
+            InternalTransactionStmt.setString(4, external_bank);
+            InternalTransactionStmt.execute();
+            getConnection().commit();
+        
+        
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            try {
+            
+                getConnection().rollback();
+            } catch (SQLException e1) {
+                e1.printStackTrace();
+            }
+        
+            return false;
+        }
+            
+        }
     
     public boolean transferFrom(String internal_user
-            , String external_bank, String external_user, int amount) {
+            , String external_bank, String external_user, int amount) throws NotFoundAccountException {
         //todo : implement the record-keeping of transferring from external bank
     
-        throw new NotImplementedException();
+        try (
+                PreparedStatement stmt = getConnection().prepareStatement("SELECT * FROM Accounts WHERE user_name = ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+                PreparedStatement transactionStmt = getConnection().prepareStatement("INSERT INTO Transactions (user_name,amount,type,timestamp) VALUES (?,?,?,?)");
+                PreparedStatement ExternalTransactionStmt = getConnection().prepareStatement("INSERT INTO ExternalTransactions (internal_user,timestamp,external_user,external_bank) VALUES (?,?,?,?)");
+    
+        ) {
+        
+            stmt.setString(1, internal_user);
+            ResultSet resultset = stmt.executeQuery();
+            //Decrement the balance of the internal user
+            if (!resultset.first())
+                throw new NotFoundAccountException();;
+            int balance = resultset.getInt("balance");
+            resultset.updateInt("balance", resultset.getInt("balance") + amount);
+            resultset.updateRow();
+        
+        
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+            transactionStmt.setString(1, internal_user);
+            transactionStmt.setInt(2, amount);
+            transactionStmt.setInt(3, TransactionTypes.IncomingExternalTransaction.ordinal());
+            transactionStmt.setTimestamp(4, timestamp);
+            transactionStmt.execute();
+        
+            ExternalTransactionStmt.setString(1, internal_user);
+            ExternalTransactionStmt.setTimestamp(2, timestamp);
+            ExternalTransactionStmt.setString(3, external_user);
+            ExternalTransactionStmt.setString(4, external_bank);
+            ExternalTransactionStmt.execute();
+            getConnection().commit();
+        
+        
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            try {
+            
+                getConnection().rollback();
+            } catch (SQLException e1) {
+                e1.printStackTrace();
+            }
+        
+            return false;
+        }
     }
     
     public void clearTables() throws SQLException {
