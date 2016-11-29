@@ -4,14 +4,17 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 
+import java.io.File;
 import java.io.FileReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * Created by Shady Atef on 11/28/16.
  * Copyrights Shadyoatef@gmail.com
  */
 public class Config {
-    private static final String filename = "config.json";
+    private static  String filename = "config.json";
     private static String bankName;
     private static String authToken;
     private static String database;
@@ -20,6 +23,11 @@ public class Config {
     private static int port;
     
     static {
+        //If file doesn't exist get it from home directory
+        // This is a hack to run two or more servers on Vagrant MultiMachine system
+        if(Files.notExists(Paths.get(filename))){
+            filename = System.getProperty("user.home")+"/"+filename;
+        }
         JsonParser parser = new JsonParser();
         try {
             JsonReader reader = new JsonReader(new FileReader(filename));
