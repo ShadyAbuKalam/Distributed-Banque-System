@@ -1,6 +1,7 @@
 package distributed_banque.database;
 
 import com.google.common.hash.Hashing;
+import distributed_banque.Config;
 import distributed_banque.database.exceptions.BankNotRegisteredException;
 import distributed_banque.database.exceptions.DuplicateAccountException;
 import distributed_banque.database.exceptions.NotEnoughBalanceException;
@@ -17,9 +18,9 @@ import java.util.ArrayList;
  */
 public class DatabaseInterface implements AutoCloseable {
     //todo : Join configuration from gradle & here into unified access
-    private static final String URL = "jdbc:mysql://localhost/distributed_banque";
-    private static final String USER_NAME = "root";
-    private static final String PASSWORD = "123";
+    private static final String URL = "jdbc:mysql://localhost/"+ Config.getDatabaseName();
+    private static final String USER_NAME = Config.getDatabaseUser();
+    private static final String PASSWORD = Config.getDatabasePassword();
     private Connection connection;
     
     @Override
@@ -205,7 +206,6 @@ public class DatabaseInterface implements AutoCloseable {
             resultset.updateInt("balance", resultset.getInt("balance") + amount);
             resultset.updateRow();
             
-            //todo Insert Transaction History
             
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             transactionStmt.setString(1, send_user);

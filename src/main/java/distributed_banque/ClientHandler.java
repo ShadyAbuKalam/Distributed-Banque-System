@@ -90,7 +90,7 @@ public class ClientHandler extends Thread {
                                     dos.writeUTF(BANK_CONN);
                                     //get authentication
                                     String authentication = db.getBankAuthToken(otherbank);
-                                    p2pdos.writeUTF(config.bankname + ":" + authentication);
+                                    p2pdos.writeUTF(Config.getBankName()+ ":" + authentication);
                                     while (true) {
                                         //receive msg from server
                                         String peerresponse = p2pdis.readUTF();
@@ -98,7 +98,7 @@ public class ClientHandler extends Thread {
                                         
                                         if (peerresponse.equalsIgnoreCase(ENTER_TRANSACTION)) {
                                             
-                                            p2pdos.writeUTF(config.bankname + ":" + username + ":" + otheruser + ":" + amount);
+                                            p2pdos.writeUTF(Config.getBankName() + ":" + username + ":" + otheruser + ":" + amount);
                                         } else if (peerresponse.equalsIgnoreCase("Refused Connection")) {
                                             dos.writeUTF("Process denied");
                                             break;
@@ -134,7 +134,7 @@ public class ClientHandler extends Thread {
                     String in = dis.readUTF();
                     
                     String[] request = in.split(":");
-                    if (!(request[1].equals(config.authToken))) {
+                    if (!(request[1].equals(Config.getAuthToken()))) {
                         dos.writeUTF(REFUSED_CONNECTION);
                         
                     } else {

@@ -16,12 +16,8 @@ public class BankServer {
 //            db.insertAccount("yasmine","123");
 //            db.close();
             //1.Create Server Socket
-        	Scanner scanner = new Scanner(System.in);
-        	System.out.println("Enter port number: 1234");
         	
-//        	String portNumber = scanner.nextLine();
-            String portNumber="1234";
-            ServerSocket server = new ServerSocket(Integer.valueOf(portNumber));
+            ServerSocket server = new ServerSocket(Config.getPort());
 
             System.out.print("Server is Ready");
             while (true) {

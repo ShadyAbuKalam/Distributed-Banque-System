@@ -1,0 +1,8 @@
+{
+  "bankName": "Bank 1",
+  "authToken": "e148a10aa6104b788c55f756b69589e6",
+  "database": "distributed_banque",
+  "databaseUser": "root",
+  "databasePassword": "123",
+  "port": 1234
+}
