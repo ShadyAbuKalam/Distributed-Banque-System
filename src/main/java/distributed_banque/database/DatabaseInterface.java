@@ -6,7 +6,6 @@ import distributed_banque.database.exceptions.BankNotRegisteredException;
 import distributed_banque.database.exceptions.DuplicateAccountException;
 import distributed_banque.database.exceptions.NotEnoughBalanceException;
 import distributed_banque.database.exceptions.NotFoundAccountException;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
@@ -395,13 +394,13 @@ public class DatabaseInterface implements AutoCloseable {
     }
     
     public ArrayList<String> getTransactions(String username) throws NotFoundAccountException {
-        //todo : Add External transactions
         if(!this.doAccountExists(username))
         {throw  new NotFoundAccountException();}
         ArrayList<String> transactionsHistory = new ArrayList<>();
         try (
                 PreparedStatement withdrawalDepositStmt = getConnection().prepareStatement("SELECT * FROM Transactions WHERE user_name = ? AND type IN (?,?)");
-                PreparedStatement internalTransferStmt = getConnection().prepareStatement("SELECT a.timestamp,a.amount, b.send_user ,b.target_user FROM Transactions as a,InternalTransactions as b WHERE a.user_name = b.send_user AND a.timestamp = b. timestamp AND (b.send_user = ? OR b.target_user = ?) ")
+                PreparedStatement internalTransferStmt = getConnection().prepareStatement("SELECT a.timestamp,a.amount, b.send_user ,b.target_user FROM Transactions as a,InternalTransactions as b WHERE a.user_name = b.send_user AND a.timestamp = b. timestamp AND (b.send_user = ? OR b.target_user = ?) ");
+                PreparedStatement externalTransferStmt = getConnection().prepareStatement("SELECT a.timestamp,a.amount,a.type, b.internal_user ,b.external_user,b.external_bank FROM Transactions as a,ExternalTransactions as b WHERE a.user_name = b.internal_user AND a.timestamp = b. timestamp AND b.internal_user= ?  ")
         
         ) {
             withdrawalDepositStmt.setString(1,username);
@@ -428,6 +427,33 @@ public class DatabaseInterface implements AutoCloseable {
                 String history = "Internal transfer from  %s to %s with amount of %s at %s" ;
     
                 history = String.format(history, result.getString("send_user"),result.getString("target_user"),result.getInt("amount"),result.getTimestamp("timestamp"));
+    
+                transactionsHistory.add(history);
+            }
+            result.close();
+            
+            externalTransferStmt.setString(1,username);
+             result =   externalTransferStmt.executeQuery();
+            while (result.next()){
+                String history = "External transfer from  %s to %s with amount of %s at %s" ;
+    
+                if(result.getInt("type") == TransactionTypes.IncomingExternalTransaction.ordinal())
+                {
+                    history = String.format(history,
+                            result.getString("external_bank")+" - "+result.getString("external_user"),
+                            result.getString("internal_user"),
+                            result.getInt("amount"),
+                            result.getTimestamp("timestamp"));
+    
+                }
+                else{
+                    history = String.format(history,
+                            result.getString("internal_user"),
+                            result.getString("external_bank")+" - "+result.getString("external_user"),
+                            result.getInt("amount"),
+                            result.getTimestamp("timestamp"));
+    
+                }
     
                 transactionsHistory.add(history);
             }
