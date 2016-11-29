@@ -88,7 +88,7 @@ public class DatabaseInterface implements AutoCloseable {
     }
     
     public int getBalance(String user_name) throws NotFoundAccountException {
-        try (PreparedStatement stmt = getConnection().prepareStatement("SELECT  balance FROM Accounts WHERE user_name = ?", ResultSet.TYPE_SCROLL_SENSITIVE);
+        try (PreparedStatement stmt = getConnection().prepareStatement("SELECT  balance FROM Accounts WHERE user_name = ?", ResultSet.TYPE_FORWARD_ONLY);
         ) {
             
             stmt.setString(1, user_name);
@@ -100,7 +100,7 @@ public class DatabaseInterface implements AutoCloseable {
             int balance = result.getInt("balance");
             
             result.close();
-            
+            getConnection().commit();
             return balance;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -432,6 +432,9 @@ public class DatabaseInterface implements AutoCloseable {
                 transactionsHistory.add(history);
             }
             result.close();
+            // Mysql select starts a transaction & due to its isolation level REPEATABLE-READ, A commit is required to read other updates written by other threads
+            getConnection().commit();
+            
         } catch (SQLException e) {
             
             e.printStackTrace();
