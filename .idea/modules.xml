@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/distributed.banque.iml" filepath="$PROJECT_DIR$/.idea/modules/distributed.banque.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/distributed.banque_main.iml" filepath="$PROJECT_DIR$/.idea/modules/distributed.banque_main.iml" group="distributed.banque" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/distributed.banque_test.iml" filepath="$PROJECT_DIR$/.idea/modules/distributed.banque_test.iml" group="distributed.banque" />
     </modules>
   </component>
 </project>

@@ -1,5 +1,7 @@
 plugins {
     id "org.flywaydb.flyway" version "4.0.3"
+    id "com.github.johnrengelman.shadow" version "1.2.4"
+
 }
 version '1.0-SNAPSHOT'
 
@@ -7,7 +9,7 @@ apply plugin: 'java'
 apply plugin: 'application'
 
 //todo : set the mainClass of application to enable Gradle to run the app
-mainClassName = "main"
+mainClassName = "BankServer"
 
 repositories {
     mavenCentral()
@@ -24,4 +26,9 @@ flyway {
     url = 'jdbc:mysql://localhost/distributed_banque'
     user = 'root'
     password = '123'
+}
+jar {
+    manifest {
+        attributes 'Main-Class': "$mainClassName"
+    }
 }
