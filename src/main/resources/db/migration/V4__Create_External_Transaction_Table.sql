@@ -2,7 +2,7 @@ CREATE TABLE Banks (
   name VARCHAR(10) PRIMARY KEY ,
   auth_token VARCHAR(100) NOT NULL
 );
-create table ExternalTransaction (
+create table ExternalTransactions (
   internal_user VARCHAR(30) not null  ,
   timestamp TIMESTAMP not null   ,
   external_user VARCHAR(30) not null ,
