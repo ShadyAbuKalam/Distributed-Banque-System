@@ -1,6 +1,7 @@
 package database;
 
 import com.google.common.hash.Hashing;
+import database.exceptions.BankNotRegisteredException;
 import database.exceptions.DuplicateAccountException;
 import database.exceptions.NotEnoughBalanceException;
 import database.exceptions.NotFoundAccountException;
@@ -268,10 +269,22 @@ public class DatabaseInterface implements AutoCloseable {
         
     }
     
-    public String getBankAuthToken(String bankname) {
-        //todo : Implement getting Authtoken of external bank
+    public String getBankAuthToken(String bankname) throws BankNotRegisteredException {
+        try (PreparedStatement stmt = getConnection().prepareStatement("SELECT  * FROM Banks WHERE name = ?");
+        ) {
         
-        throw new NotImplementedException();
+            stmt.setString(1, bankname);
+        
+            ResultSet result = stmt.executeQuery();
+            if(!result.first())
+                throw new BankNotRegisteredException();
+            return result.getString("auth_token");
+        
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+        
     }
     
     public boolean doAccountExists(String user_name) {
