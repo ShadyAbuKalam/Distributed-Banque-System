@@ -2,13 +2,16 @@ package distributed_banque;
 
 import com.google.common.base.Joiner;
 import distributed_banque.database.DatabaseInterface;
+import distributed_banque.database.exceptions.BankNotRegisteredException;
 import distributed_banque.database.exceptions.NotEnoughBalanceException;
 import distributed_banque.database.exceptions.NotFoundAccountException;
+
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 public class ClientHandler extends Thread {
@@ -71,59 +74,8 @@ public class ClientHandler extends Thread {
                         } else if (options[0].equals("5")) {
                             handleInternalTransfer(options);
                         } else if (options[0].equals("6")) {
-                            try {
-                                //todo:Wrap external Transfer case into handler
-                                //dos.writeUTF("External transfer of "+options[5]+" LE to " +options[4] );
-                                //external transfer
-                                //	 "\n 6-External Transfer : bankIP : port : other bank : other user : amount "
-                                //check balance
-                                
-                                String bankIP = options[1];
-                                String port = options[2];
-                                String otherbank = options[3];
-                                String otheruser = options[4];
-                                String amount = options[5];
-                                if (db.getBalance(username) >= Integer.valueOf(amount)) {
-                                    Socket p2p = new Socket(bankIP, Integer.valueOf(port));
-                                    DataInputStream p2pdis = new DataInputStream(p2p.getInputStream());
-                                    DataOutputStream p2pdos = new DataOutputStream(p2p.getOutputStream());
-                                    dos.writeUTF(BANK_CONN);
-                                    //get authentication
-                                    String authentication = db.getBankAuthToken(otherbank);
-                                    p2pdos.writeUTF(Config.getBankName()+ ":" + authentication);
-                                    while (true) {
-                                        //receive msg from server
-                                        String peerresponse = p2pdis.readUTF();
-                                        
-                                        
-                                        if (peerresponse.equalsIgnoreCase(ENTER_TRANSACTION)) {
-                                            
-                                            p2pdos.writeUTF(Config.getBankName() + ":" + username + ":" + otheruser + ":" + amount);
-                                        } else if (peerresponse.equalsIgnoreCase("Refused Connection")) {
-                                            dos.writeUTF("Process denied");
-                                            break;
-                                        } else if (peerresponse.equalsIgnoreCase(DONE)) {
-                                            db.transferTo(username, otherbank, otheruser, Integer.valueOf(amount));
-                                        } else if (peerresponse.equalsIgnoreCase(NOT_FOUND_ACCOUNT)) {
-                                            dos.writeUTF("Target account not found");
-                                            break;
-                                        }
-                                    }
-                                    
-                                    
-                                    p2p.close();
-                                    p2pdis.close();
-                                    p2pdos.close();
-                                    
-                                }
-                            } catch (NotFoundAccountException e) {
-                                
-                                dos.writeUTF("This is account is not found");
-                            } catch (NotEnoughBalanceException e) {
-                                dos.writeUTF("This  account doesn't have  enough balance");
-                                
-                            }
-                            
+                            handleClientDoExternalTransfer(options);
+    
                         }
                     }
                     while (!options[0].equals("7"));
@@ -131,10 +83,9 @@ public class ClientHandler extends Thread {
                     break;
                 } else if (conn_type.equals(BANK_CONN)) {
                     //check authentication
-                    String in = dis.readUTF();
+                    String authtoken = dis.readUTF();
                     
-                    String[] request = in.split(":");
-                    if (!(request[1].equals(Config.getAuthToken()))) {
+                    if (!(authtoken.equals(Config.getAuthToken()))) {
                         dos.writeUTF(REFUSED_CONNECTION);
                         
                     } else {
@@ -150,9 +101,7 @@ public class ClientHandler extends Thread {
                             dos.writeUTF(NOT_FOUND_ACCOUNT);
                         }
                     }
-                    dos.close();
-                    dis.close();
-                    client.close();
+                    break;
                 }
                 
             }
@@ -167,6 +116,66 @@ public class ClientHandler extends Thread {
             e.printStackTrace();
         }
         
+    }
+    
+    private void handleClientDoExternalTransfer(String[] options) throws IOException {
+        try {
+            
+            String bankIP = options[1];
+            String port = options[2];
+            String otherbank = options[3];
+            String otheruser = options[4];
+            String amount = options[5];
+            if (db.getBalance(username) >= Integer.valueOf(amount)) {
+                Socket p2p = new Socket(bankIP, Integer.valueOf(port));
+                DataInputStream p2pdis = new DataInputStream(p2p.getInputStream());
+                DataOutputStream p2pdos = new DataOutputStream(p2p.getOutputStream());
+                
+                //Declare it's Bank-to-Bank communication
+                p2pdos.writeUTF(BANK_CONN);
+                //Send authentication token
+                String authentication = db.getBankAuthToken(otherbank);
+                p2pdos.writeUTF(authentication);
+                while (true) {
+                    //receive msg from server
+                    String peerresponse = p2pdis.readUTF();
+                    
+                    
+                    if (peerresponse.equalsIgnoreCase(ENTER_TRANSACTION)) {
+                        
+                        p2pdos.writeUTF(Config.getBankName() + ":" + username + ":" + otheruser + ":" + amount);
+                    } else if (peerresponse.equalsIgnoreCase(REFUSED_CONNECTION)) {
+                        dos.writeUTF("Process denied");
+                        break;
+                    } else if (peerresponse.equalsIgnoreCase(DONE)) {
+                        db.transferToExternalBank(username, otherbank, otheruser, Integer.valueOf(amount));
+                    dos.writeUTF(String.format("Transferred successfully %s to %s - %s", amount,otherbank,otheruser));
+                        break;
+                    } else if (peerresponse.equalsIgnoreCase(NOT_FOUND_ACCOUNT)) {
+                        dos.writeUTF("Target account not found");
+                        break;
+                    }
+                }
+                
+                
+                p2p.close();
+                p2pdis.close();
+                p2pdos.close();
+                
+            }
+        } catch (NotFoundAccountException e) {
+            
+            dos.writeUTF("This is account is not found");
+        } catch (NotEnoughBalanceException e) {
+            dos.writeUTF("This  account doesn't have  enough balance");
+            
+        } catch (BankNotRegisteredException e) {
+            dos.writeUTF("The target bank is not known");
+        }
+        catch (UnknownHostException e){
+            dos.writeUTF("Can't communicate with the target bank");
+    
+        }
     }
     
     private void handleViewHistory() throws IOException {
@@ -185,7 +194,7 @@ public class ClientHandler extends Thread {
     }
     private void handleInternalTransfer(String[] options) throws IOException {
         try {
-            db.transferTo(username, options[1], Integer.parseInt(options[2]));
+            db.transferToExternalBank(username, options[1], Integer.parseInt(options[2]));
             dos.writeUTF("Internal transfer of " + options[2] + " LE to " + options[1]);
         } catch (NotFoundAccountException e) {
             dos.writeUTF("This is account is not found");
