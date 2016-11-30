@@ -30,6 +30,7 @@ public class Client {
                 //receive msg from server
                 String servercommand =  dis.readUTF();
                 System.out.println(servercommand);
+                System.out.println();
                 
                 if(servercommand.equalsIgnoreCase("disconnect"))
                     break;
@@ -37,7 +38,7 @@ public class Client {
                     break;
                 else if(servercommand.contains("Please")) {
                     String userInput;
-                    if(servercommand.contains("enter password")) {
+                    if(servercommand.contains("Please re-enter your password") || servercommand.contains("Please enter password")) {
                         Console console = System.console();
                         if(console != null) {
                             char[] pass = console.readPassword();

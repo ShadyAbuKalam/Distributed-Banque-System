@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Distributed_banque_client:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Distributed_banque_client_jar</output-path>
+    <root id="archive" name="Distributed_banque_client.jar">
+      <element id="module-output" name="Distributed_banque_client" />
+    </root>
+  </artifact>
+</component>
