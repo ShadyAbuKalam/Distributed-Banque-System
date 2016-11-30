@@ -40,8 +40,9 @@ public class Config {
             port = jsonObject.get("port").getAsInt();
             
         } catch (Exception e) {
-            System.out.println("We are doomed, can't read config from json ! run from your TA as fast as possible");
-            e.printStackTrace();
+            System.out.println("Config  file is not found or mal-formatted, please check your config.json file. ");
+            System.exit(-1);
+            
             
         }
         

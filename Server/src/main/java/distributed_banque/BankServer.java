@@ -9,17 +9,10 @@ public class BankServer {
 
     public static void main(String[] args) {
         try {
-            //0. Set Fakes users
-//            DatabaseInterface db = new DatabaseInterface();
-//            db.clearTables();
-//            db.insertAccount("shady94","123");
-//            db.insertAccount("yasmine","123");
-//            db.close();
-            //1.Create Server Socket
         	
             ServerSocket server = new ServerSocket(Config.getPort());
 
-            System.out.print("Server is Ready");
+            System.out.println("Server is Ready");
             while (true) {
                 //2.accept connection
                 Socket c = server.accept();
