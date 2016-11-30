@@ -9,6 +9,7 @@ import distributed_banque.database.exceptions.NotFoundAccountException;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -44,48 +45,57 @@ public class ClientHandler extends Thread {
             
             String conn_type = dis.readUTF();
             while (true) {
-                if (conn_type.equals(CLIENT_CONN)) {
-                    if (!handleLogin()) break;
-                    
-                    String[] options;
-                    String option;
-                    do {
-                        dos.writeUTF("Please select an option "
-                                + "\n 1-check balance "
-                                + "\n 2-View history "
-                                + "\n 3-Deposit : amount "
-                                + "\n 4-Withdraw : amount "
-                                + "\n 5-Internal Transfer : other user : amount"
-                                + "\n 6-External Transfer : bankIP : port : other bank : other user : amount "
-                                + "\n 7-quit ");
-                        option = dis.readUTF();
-                        options = option.split(":");
-                        
-                        if (options[0].equals("1")) {
-                            handleCheckBalance();
-                        } else if (options[0].equals("2")) {
-                            handleViewHistory();
-                        } else if (options[0].equals("3")) {
-                            handleDeposit(options);
-                            
-                        } else if (options[0].equals("4")) {
-                            handleWithdrawal(options);
-                        } else if (options[0].equals("5")) {
-                            handleInternalTransfer(options);
-                        } else if (options[0].equals("6")) {
-                            handleClientDoExternalTransfer(options);
-                            
-                        }
-                    }
-                    while (!options[0].equals("7"));
-                    dos.writeUTF("disconnect");
-                    break;
-                } else if (conn_type.equals(BANK_CONN)) {
-                    handleBankConnection();
-                    break;
-                    
-                }
+                try {
+                    if (conn_type.equals(CLIENT_CONN)) {
+                        if (!handleLogin()) break;
+        
+                        String[] options;
+                        String option;
+                        do {
+                            dos.writeUTF("Please select an option "
+                                    + "\n 1-check balance "
+                                    + "\n 2-View history "
+                                    + "\n 3-Deposit : amount "
+                                    + "\n 4-Withdraw : amount "
+                                    + "\n 5-Internal Transfer : other user : amount"
+                                    + "\n 6-External Transfer : bankIP : port : other bank : other user : amount "
+                                    + "\n 7-quit ");
+                            option = dis.readUTF();
+                            options = option.split(":");
+            
+                            if (options[0].equals("1")) {
+                                handleCheckBalance();
+                            } else if (options[0].equals("2")) {
+                                handleViewHistory();
+                            } else if (options[0].equals("3")) {
+                                handleDeposit(options);
                 
+                            } else if (options[0].equals("4")) {
+                                handleWithdrawal(options);
+                            } else if (options[0].equals("5")) {
+                                handleInternalTransfer(options);
+                            } else if (options[0].equals("6")) {
+                                handleClientDoExternalTransfer(options);
+                
+                            }
+                        }
+                        while (!options[0].equals("7"));
+                        dos.writeUTF("disconnect");
+                        break;
+                    } else if (conn_type.equals(BANK_CONN)) {
+                        handleBankConnection();
+                        break;
+        
+                    }
+    
+                }
+                catch (Exception e)
+                {
+                    dos.writeUTF("Something went wrong" + e.getMessage());
+                    System.out.println("Alert non-treated exception");
+                    e.printStackTrace();
+                }
+               
             }
             
             //5.terminate connection with distributed_banque.client
@@ -178,7 +188,7 @@ public class ClientHandler extends Thread {
             
         } catch (BankNotRegisteredException e) {
             dos.writeUTF("The target bank is not known");
-        } catch (UnknownHostException e) {
+        } catch (UnknownHostException | ConnectException e) {
             dos.writeUTF("Can't communicate with the target bank");
             
         }
