@@ -265,12 +265,13 @@ public class ClientHandler extends Thread {
         dos.writeUTF("Please enter password");
         String password = dis.readUTF();
         count = 0;
-        while (!db.authenticate(username, password) && (count < 2)) {
+        boolean result = false;
+        while (! (result = db.authenticate(username, password)) && (count < 2)) {
             dos.writeUTF("Wrong password.Please re-enter your password");
             password = dis.readUTF();
             count++;
         }
-        if (count >= 2) {
+        if (!result) {
             dos.writeUTF("More than 3 wrong entries");
             return false;
         }
